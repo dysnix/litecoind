@@ -20,7 +20,7 @@ spec:
             - containerPort: 443
               name: litecoind-rpc
           volumeMounts:
-            - mountPath: /srv/litecoind
+            - mountPath: /root
               name: litecoind-pvc
             - mountPath: /etc/litecoind
               name: litecoind-conf
