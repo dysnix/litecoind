@@ -11,16 +11,13 @@ Litecoind with SSL support
 
     PASSWORD=`pwgen -nB 10 1`
     tee litecoin.conf << EOF
-    datadir=/srv/litecoin
     onlynet=IPv4
     server=1
     rpcuser=rpcuser
     rpcpassword=$PASSWORD
-    rpctimeout=30
     rpcport=9332
     rpcconnect=127.0.0.1
     disablewallet=0
-    txindex=1
     printtoconsole=1
     EOF
 
