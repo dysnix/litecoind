@@ -21,7 +21,14 @@ Litecoind with SSL support
     printtoconsole=1
     EOF
 
-### Create confir files and deploy certs
+### Deploy using Docker
+    
+    mkdir litecoind-ssl data
+    mv server.key litecoind-ssl/
+    mv server.crt litecoind-ssl/
+    docker run -d --restart=always --name=litecoind -v ./litecoin.conf:/etc/litecoind/litecoin.conf -v ./litecoind-ssl/:/etc/litecoind-ssl/ -v ./data/:/root/ kuberstack/litecoind
+
+### Deploy using Kubernetes
 
     kubectl create secret generic litecoind-conf --from-file=litecoin.conf
     kubectl create secret generic litecoind-ssl --from-file=server.crt --from-file=server.key
