@@ -1,23 +1,33 @@
-FROM ubuntu:xenial
+FROM debian:stretch-slim
 
-WORKDIR /opt/
+ENV LITECOIN_VERSION 0.17.1
 
-RUN apt-get update && apt-get install -y wget nginx supervisor && \
-    wget https://download.litecoin.org/litecoin-0.13.2/linux/litecoin-0.13.2-x86_64-linux-gnu.tar.gz && \
-    tar -zvxf litecoin-0.13.2-x86_64-linux-gnu.tar.gz && \
-    mv litecoin-0.13.2 litecoin
+ENV LITECOIN_URL https://download.litecoin.org/litecoin-$LITECOIN_VERSION/linux/litecoin-$LITECOIN_VERSION-x86_64-linux-gnu.tar.gz
 
-# Tuning supervisor
-RUN sed -i 's/^\(\[supervisord\]\)$/\1\nnodaemon=true/' /etc/supervisor/supervisord.conf
+ARG USER_ID
+ARG GROUP_ID
 
-# Copy supervisor conf
-COPY supervisor.conf /etc/supervisor/conf.d/programs.conf
+ENV HOME /home/litecoin
 
-# Add nginx config
-ADD nginx.conf /etc/nginx/nginx.conf
-RUN mkdir -p /root/.litecoin && ln -s /etc/litecoind/litecoin.conf /root/.litecoin/litecoin.conf
+# add user with specified (or default) user/group ids
+ENV USER_ID ${USER_ID:-1000}
+ENV GROUP_ID ${GROUP_ID:-1000}
 
-EXPOSE 443
-ENV PATH "/opt/litecoin/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+RUN groupadd -g ${GROUP_ID} litecoin \
+	&& useradd -u ${USER_ID} -g litecoin -s /bin/bash -m -d ${HOME} litecoin
 
-CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+RUN set -ex \
+	&& apt-get update \
+	&& apt-get install -qq --no-install-recommends ca-certificates wget gosu \
+	&& rm -rf /var/lib/apt/lists/*
+
+# install litecoin binaries
+RUN set -ex \
+	&& cd /tmp \
+	&& wget -qO litecoin.tar.gz "$LITECOIN_URL" \
+	&& tar -xzvf litecoin.tar.gz -C /usr/local --strip-components=1 --exclude=*-qt \
+	&& rm -rf /tmp/*
+
+COPY docker-entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["litecoind"]
